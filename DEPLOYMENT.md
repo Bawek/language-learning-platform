@@ -1,136 +1,53 @@
 # Deployment Guide - Language Learning Platform
 
-This guide covers deploying both the Django backend and Next.js frontend.
+This guide covers deploying the Django backend and Next.js frontend. **Railway is the recommended platform** for easy, free deployment.
 
-## 🚀 Quick Deploy Options
+## 🚀 Railway Deployment (Recommended)
 
-### Option 1: Railway (Recommended)
+Railway provides free hosting with PostgreSQL, Redis, and automatic HTTPS.
 
-Railway provides free hosting with PostgreSQL, Redis, and WebSocket support.
-
-#### Backend Deployment
+### Backend Deployment
 
 1. **Create Railway Account**
    - Go to https://railway.app
-   - Sign up with GitHub
+   - Sign up with GitHub (free)
 
-2. **Deploy Backend**
+2. **Deploy Backend from GitHub**
    ```bash
-   # Install Railway CLI
-   npm install -g @railway/cli
-   
-   # Login
-   railway login
-   
-   # Navigate to backend
-   cd backend
-   
-   # Initialize project
-   railway init
-   
-   # Add PostgreSQL
-   railway add --database postgresql
-   
-   # Add Redis
-   railway add --database redis
-   
-   # Deploy
-   railway up
+   # Push your code to GitHub first
+   git add .
+   git commit -m "Ready for deployment"
+   git push origin main
    ```
 
-3. **Set Environment Variables**
-   ```bash
-   railway variables set DJANGO_SETTINGS_MODULE=config.settings.production
-   railway variables set SECRET_KEY=$(openssl rand -base64 32)
-   railway variables set DEBUG=False
+3. **Create New Project in Railway**
+   - Click "New Project"
+   - Select "Deploy from GitHub repo"
+   - Choose your repository
+   - Railway will auto-detect Django
+
+4. **Add PostgreSQL Database**
+   - In your project, click "New"
+   - Select "Database" → "PostgreSQL"
+   - Railway automatically sets `DATABASE_URL`
+
+5. **Add Redis (Optional)**
+   - Click "New" → "Database" → "Redis"
+   - Railway automatically sets `REDIS_URL`
+
+6. **Set Environment Variables**
    
-   # Groq API (FREE - get from https://console.groq.com/keys)
-   railway variables set GROQ_API_KEY=your_groq_api_key_here
-   railway variables set GROQ_BASE_URL=https://api.groq.com/openai/v1
-   railway variables set GROQ_MODEL=llama-3.3-70b-versatile
-   railway variables set GROQ_WHISPER_MODEL=whisper-large-v3-turbo
+   In Railway dashboard, go to your backend service → Variables:
    
-   # AI Providers (ALL FREE)
-   railway variables set STT_PROVIDER=groq
-   railway variables set LLM_PROVIDER=groq
-   railway variables set TTS_PROVIDER=edge
-   railway variables set EDGE_TTS_VOICE=en-US-AriaNeural
-   ```
-
-4. **Get Database URLs**
-   ```bash
-   # Railway will automatically set:
-   # - DATABASE_URL (PostgreSQL)
-   # - REDIS_URL (Redis)
-   ```
-
-5. **Set CORS Origins**
-   ```bash
-   railway variables set CORS_ALLOWED_ORIGINS=https://your-frontend.vercel.app
-   railway variables set ALLOWED_HOSTS=your-backend.railway.app
-   ```
-
-#### Frontend Deployment (Vercel)
-
-1. **Deploy to Vercel**
-   ```bash
-   cd frontend
-   
-   # Install Vercel CLI
-   npm install -g vercel
-   
-   # Deploy
-   vercel
-   ```
-
-2. **Set Environment Variables in Vercel Dashboard**
-   - Go to your project settings
-   - Add environment variables:
-     ```
-     NEXT_PUBLIC_API_URL=https://your-backend.railway.app
-     NEXT_PUBLIC_WS_URL=wss://your-backend.railway.app
-     ```
-
-3. **Redeploy**
-   ```bash
-   vercel --prod
-   ```
-
----
-
-## Option 2: Render
-
-### Backend on Render
-
-1. **Create Render Account**
-   - Go to https://render.com
-   - Sign up with GitHub
-
-2. **Create New Web Service**
-   - Connect your GitHub repo
-   - Select `backend` as root directory
-   - Railway will auto-detect Django and use the Procfile
-   - Build Command: `pip install -r requirements.txt`
-   - Start Command: Automatically uses `Procfile`
-
-3. **Add PostgreSQL Database**
-   - Create PostgreSQL database in Render
-   - Copy the Internal Database URL
-
-4. **Add Redis**
-   - Create Redis instance in Render
-   - Copy the Internal Redis URL
-
-5. **Set Environment Variables** (in Render dashboard)
-   ```
+   ```env
+   # Django
    DJANGO_SETTINGS_MODULE=config.settings.production
    SECRET_KEY=<generate-random-key>
    DEBUG=False
-   DATABASE_URL=<from-render-postgres>
-   REDIS_URL=<from-render-redis>
+   ALLOWED_HOSTS=${{RAILWAY_PUBLIC_DOMAIN}}
    
-   # Groq (FREE)
-   GROQ_API_KEY=<your-groq-key>
+   # Groq API (FREE)
+   GROQ_API_KEY=your_groq_key_here
    GROQ_BASE_URL=https://api.groq.com/openai/v1
    GROQ_MODEL=llama-3.3-70b-versatile
    GROQ_WHISPER_MODEL=whisper-large-v3-turbo
@@ -141,32 +58,53 @@ Railway provides free hosting with PostgreSQL, Redis, and WebSocket support.
    TTS_PROVIDER=edge
    EDGE_TTS_VOICE=en-US-AriaNeural
    
-   # Django
-   ALLOWED_HOSTS=your-app.onrender.com
+   # CORS (update after frontend deployment)
    CORS_ALLOWED_ORIGINS=https://your-frontend.vercel.app
    ```
 
-### Frontend on Vercel (same as above)
+7. **Deploy**
+   - Railway deploys automatically
+   - Check logs for any errors
+   - Migrations run automatically via Procfile
+
+8. **Get Your Backend URL**
+   - Click "Settings" → "Generate Domain"
+   - Copy the URL (e.g., `https://your-app.railway.app`)
+
+### Frontend Deployment (Vercel)
+
+1. **Deploy to Vercel**
+   ```bash
+   cd frontend
+   npm install -g vercel
+   vercel
+   ```
+
+2. **Set Environment Variables**
+   
+   In Vercel dashboard → Settings → Environment Variables:
+   ```env
+   NEXT_PUBLIC_API_URL=https://your-backend.railway.app
+   NEXT_PUBLIC_WS_URL=wss://your-backend.railway.app
+   ```
+
+3. **Redeploy**
+   ```bash
+   vercel --prod
+   ```
+
+4. **Update Backend CORS**
+   - Go back to Railway
+   - Update `CORS_ALLOWED_ORIGINS` with your Vercel URL
+   - Redeploy backend
 
 ---
 
-## Option 3: Docker Deployment
+## 🔧 Alternative: Docker (Local/VPS)
 
-### Build Docker Images
+### Docker Compose Setup
 
-```bash
-# Backend
-cd backend
-docker build -t language-learning-backend .
-
-# Frontend
-cd ../frontend
-docker build -t language-learning-frontend .
-```
-
-### Docker Compose for Local/VPS
-
-Create `docker-compose.yml`:
+Create `docker-compose.yml` in project root:
 
 ```yaml
 version: '3.8'
@@ -190,7 +128,7 @@ services:
 
   backend:
     build: ./backend
-    command: daphne -b 0.0.0.0 -p 8000 config.asgi:application
+    command: bash start.sh
     volumes:
       - ./backend:/app
     ports:
@@ -205,7 +143,9 @@ services:
       - SECRET_KEY=your-secret-key-here
       - DEBUG=False
       - GROQ_API_KEY=your-groq-key
+      - STT_PROVIDER=groq
       - LLM_PROVIDER=groq
+      - TTS_PROVIDER=edge
 
   frontend:
     build: ./frontend
@@ -228,146 +168,7 @@ docker-compose up -d
 
 ---
 
-## Option 4: VPS (DigitalOcean, AWS, etc.)
-
-### Requirements
-- Ubuntu 22.04 LTS
-- 2GB RAM minimum
-- Python 3.11+
-- Node.js 18+
-- PostgreSQL 15+
-- Redis 7+
-- Nginx
-
-### Setup Script
-
-```bash
-#!/bin/bash
-
-# Update system
-sudo apt update && sudo apt upgrade -y
-
-# Install dependencies
-sudo apt install -y python3.11 python3.11-venv python3-pip postgresql redis nginx certbot python3-certbot-nginx
-
-# Install Node.js
-curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-sudo apt install -y nodejs
-
-# Clone repository
-cd /var/www
-git clone <your-repo-url> language-learning
-cd language-learning
-
-# Setup Backend
-cd backend
-python3.11 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-
-# Create production settings
-cp .env.example .env
-# Edit .env with production values
-
-# Run migrations
-python manage.py migrate
-python manage.py seed_agents
-python manage.py collectstatic --no-input
-
-# Setup Frontend
-cd ../frontend
-npm install
-npm run build
-
-# Configure systemd service for backend
-sudo tee /etc/systemd/system/language-backend.service << EOF
-[Unit]
-Description=Language Learning Backend
-After=network.target
-
-[Service]
-User=www-data
-WorkingDirectory=/var/www/language-learning/backend
-Environment="PATH=/var/www/language-learning/backend/venv/bin"
-ExecStart=/var/www/language-learning/backend/venv/bin/daphne -b 0.0.0.0 -p 8000 config.asgi:application
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-# Configure systemd service for frontend
-sudo tee /etc/systemd/system/language-frontend.service << EOF
-[Unit]
-Description=Language Learning Frontend
-After=network.target
-
-[Service]
-User=www-data
-WorkingDirectory=/var/www/language-learning/frontend
-ExecStart=/usr/bin/npm start
-Restart=always
-Environment=PORT=3000
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-# Start services
-sudo systemctl daemon-reload
-sudo systemctl enable language-backend language-frontend
-sudo systemctl start language-backend language-frontend
-
-# Configure Nginx
-sudo tee /etc/nginx/sites-available/language-learning << 'EOF'
-server {
-    listen 80;
-    server_name your-domain.com;
-
-    location / {
-        proxy_pass http://localhost:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-    }
-}
-
-server {
-    listen 80;
-    server_name api.your-domain.com;
-
-    location / {
-        proxy_pass http://localhost:8000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-    }
-
-    location /ws/ {
-        proxy_pass http://localhost:8000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "Upgrade";
-        proxy_set_header Host $host;
-    }
-}
-EOF
-
-sudo ln -s /etc/nginx/sites-available/language-learning /etc/nginx/sites-enabled/
-sudo nginx -t
-sudo systemctl restart nginx
-
-# SSL with Let's Encrypt
-sudo certbot --nginx -d your-domain.com -d api.your-domain.com
-```
-
----
-
-## Environment Variables Reference
+## 📋 Environment Variables Reference
 
 ### Backend (.env)
 
@@ -376,52 +177,35 @@ sudo certbot --nginx -d your-domain.com -d api.your-domain.com
 DJANGO_SETTINGS_MODULE=config.settings.production
 SECRET_KEY=<generate-with-openssl-rand-base64-32>
 DEBUG=False
-ALLOWED_HOSTS=your-backend-domain.com,api.your-domain.com
+ALLOWED_HOSTS=your-backend-domain.com
 
-# Database
+# Database (provided by Railway)
 DATABASE_URL=postgresql://user:pass@host:5432/dbname
 
-# Redis
+# Redis (provided by Railway)
 REDIS_URL=redis://host:6379/0
 
-# ============================================
-# FREE AI CONFIGURATION (Groq + Edge TTS)
-# ============================================
-
-# Groq API (FREE - get from https://console.groq.com/keys)
+# Groq API (FREE)
 GROQ_API_KEY=gsk_xxx
 GROQ_BASE_URL=https://api.groq.com/openai/v1
 GROQ_MODEL=llama-3.3-70b-versatile
 GROQ_WHISPER_MODEL=whisper-large-v3-turbo
 
-# AI Providers - ALL FREE
+# AI Providers (ALL FREE)
 STT_PROVIDER=groq
 LLM_PROVIDER=groq
 TTS_PROVIDER=edge
-
-# Edge TTS Voice (FREE, no API key needed)
-# Popular voices:
-# - English: en-US-AriaNeural, en-US-GuyNeural
-# - Spanish: es-ES-ElviraNeural, es-MX-DaliaNeural
-# - Amharic: am-ET-MekdesNeural
-# - Somali: so-SO-UbaxNeural
 EDGE_TTS_VOICE=en-US-AriaNeural
 
 # CORS
-CORS_ALLOWED_ORIGINS=https://your-frontend.vercel.app,https://your-domain.com
-
-# ============================================
-# OPTIONAL: OpenAI (requires paid credits)
-# ============================================
-# Only set if you want to use OpenAI instead of free alternatives
-# OPENAI_API_KEY=sk-xxx
+CORS_ALLOWED_ORIGINS=https://your-frontend.vercel.app
 ```
 
-### Frontend (.env.local or Vercel env vars)
+### Frontend (.env.local)
 
 ```env
-NEXT_PUBLIC_API_URL=https://api.your-domain.com
-NEXT_PUBLIC_WS_URL=wss://api.your-domain.com
+NEXT_PUBLIC_API_URL=https://your-backend.railway.app
+NEXT_PUBLIC_WS_URL=wss://your-backend.railway.app
 ```
 
 ---
@@ -589,10 +373,29 @@ cmd = "daphne -b 0.0.0.0 -p ${PORT:-8000} config.asgi:application"
 ## Support & Resources
 
 - Railway Docs: https://docs.railway.app
-- Render Docs: https://render.com/docs
 - Vercel Docs: https://vercel.com/docs
 - Groq API: https://console.groq.com
 - Django Deployment: https://docs.djangoproject.com/en/stable/howto/deployment/
+
+---
+
+## Appendix: Render Deployment (Optional Alternative)
+
+If you prefer Render over Railway, here's a minimal setup guide:
+
+### Render Backend
+
+1. **Create Render Account** at https://render.com
+2. **New Web Service** → Connect GitHub repo
+3. **Settings**:
+   - Root Directory: `backend`
+   - Build Command: `pip install -r requirements.txt`
+   - Start Command: `bash start.sh`
+4. **Add Database**: New → PostgreSQL (copy internal URL)
+5. **Environment Variables** (same as Railway, see reference above)
+6. **Deploy**
+
+The `start.sh` script works for both Railway and Render.
 
 ---
 
