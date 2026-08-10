@@ -22,7 +22,7 @@ class Message(models.Model):
     ]
 
     session = models.ForeignKey(
-        'sessions.LearningSession',
+        'learning_sessions.LearningSession',
         on_delete=models.CASCADE,
         related_name='messages',
     )

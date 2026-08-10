@@ -30,6 +30,8 @@ class LearningSessionSerializer(serializers.ModelSerializer):
 
 class SessionCreateSerializer(serializers.ModelSerializer):
     """Serializer for creating a new learning session."""
+    target_language = serializers.CharField(required=False)
+    proficiency_level = serializers.CharField(required=False)
 
     class Meta:
         model = LearningSession
