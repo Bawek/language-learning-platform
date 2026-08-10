@@ -128,6 +128,78 @@ class OpenAILLMProvider(BaseLLMProvider):
         return None
 
 
+class GroqLLMProvider(BaseLLMProvider):
+    """
+    LLM provider using Groq's ultra-fast inference API (OpenAI-compatible).
+    Free tier available with generous limits.
+    """
+
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        model: str = 'llama-3.3-70b-versatile',
+        temperature: float = 0.7,
+        max_tokens: int = 1024,
+    ):
+        self.api_key = api_key or os.environ.get('GROQ_API_KEY', '')
+        if not self.api_key:
+            raise ValueError('GROQ_API_KEY is required for GroqLLMProvider.')
+        self.model = model
+        self.temperature = temperature
+        self.max_tokens = max_tokens
+        self.base_url = os.environ.get('GROQ_BASE_URL', 'https://api.groq.com/openai/v1')
+
+    async def chat_stream(
+        self,
+        messages: list[dict],
+        system_prompt: str,
+    ) -> AsyncGenerator[str, None]:
+        """Stream a chat completion from Groq."""
+        from openai import AsyncOpenAI
+
+        client = AsyncOpenAI(
+            api_key=self.api_key,
+            base_url=self.base_url,
+        )
+
+        full_messages = [{'role': 'system', 'content': system_prompt}] + messages
+
+        try:
+            stream = await client.chat.completions.create(
+                model=self.model,
+                messages=full_messages,
+                temperature=self.temperature,
+                max_tokens=self.max_tokens,
+                stream=True,
+            )
+
+            async for chunk in stream:
+                delta = chunk.choices[0].delta if chunk.choices else None
+                if delta and delta.content:
+                    yield delta.content
+
+        except Exception as exc:
+            logger.error('Groq streaming error: %s', exc, exc_info=True)
+            raise
+
+    def strip_feedback_json(self, text: str) -> str:
+        """Remove embedded JSON feedback block from response text."""
+        clean = re.sub(r'```json\s*\{.*?\}\s*```', '', text, flags=re.DOTALL)
+        return clean.strip()
+
+    @staticmethod
+    def extract_feedback(text: str) -> Optional[dict]:
+        """Extract structured feedback from LLM response."""
+        pattern = r'```json\s*(\{.*?\})\s*```'
+        match = re.search(pattern, text, re.DOTALL)
+        if match:
+            try:
+                return json.loads(match.group(1))
+            except json.JSONDecodeError as exc:
+                logger.warning('Failed to parse feedback JSON: %s', exc)
+        return None
+
+
 class LocalLLMProvider(BaseLLMProvider):
     """
     LLM provider using a local Ollama-compatible API endpoint.
@@ -192,15 +264,20 @@ class LocalLLMProvider(BaseLLMProvider):
 def get_llm_provider() -> BaseLLMProvider:
     """
     Factory function that returns the configured LLM provider.
-    Reads LLM_PROVIDER env var: 'openai' (default) | 'local'
+    Reads LLM_PROVIDER env var: 'openai' | 'groq' (default) | 'local'
     """
-    provider = os.environ.get('LLM_PROVIDER', 'openai').lower()
-    if provider == 'local':
+    provider = os.environ.get('LLM_PROVIDER', 'groq').lower()
+    
+    if provider == 'groq':
+        model = os.environ.get('GROQ_MODEL', 'llama-3.3-70b-versatile')
+        logger.info('Using Groq LLM provider (model=%s).', model)
+        return GroqLLMProvider(model=model)
+    elif provider == 'local':
         base_url = os.environ.get('LOCAL_LLM_BASE_URL', 'http://localhost:11434')
         model = os.environ.get('LOCAL_LLM_MODEL', 'llama3')
         logger.info('Using local LLM provider (url=%s, model=%s).', base_url, model)
         return LocalLLMProvider(base_url=base_url, model=model)
-    else:
+    else:  # openai
         model = os.environ.get('OPENAI_MODEL', 'gpt-4o')
         logger.info('Using OpenAI LLM provider (model=%s).', model)
         return OpenAILLMProvider(model=model)

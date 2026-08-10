@@ -1,299 +1,422 @@
-# LinguaAI — AI-Powered Real-Time Language Learning Platform
+# 🌍 LinguaAI - Free Language Learning Platform
 
-A full-stack language learning platform with real-time voice, text, and video conversations powered by AI. Built with **Django 5.2** + **Channels** on the backend and **Next.js 15.5** on the frontend.
+A modern, AI-powered language learning platform with **100% free AI services**. Learn languages through conversations with AI tutors, supporting text, voice, and video modes.
 
----
+## ✨ Key Features
 
-## Features
+### 🆓 Completely Free AI Stack
+- **No OpenAI credits required**
+- **No GPU needed**
+- **Production-ready on free hosting**
+- Uses Groq (LLM + STT) and Edge TTS (completely free)
 
-- 🎙 **Voice conversations** — Real-time STT (Whisper) → LLM → TTS pipeline over WebSockets
-- 💬 **Text chat** — Streaming LLM responses with inline grammar corrections
-- 📹 **Video mode** — Camera + voice with animated AI avatar
-- 📊 **Live feedback** — Grammar corrections, vocabulary suggestions, and pronunciation scores
-- 🤖 **Multiple AI agents** — Each with a distinct persona, role, and teaching style
-- 🔒 **JWT authentication** — Secure login/register with automatic token refresh
-- ⚡ **Adaptive difficulty** — AI adjusts to your A1–C2 proficiency level
-- 🌍 **10+ languages** — Spanish, French, German, Japanese, Mandarin, and more
+### 🤖 AI-Powered Learning
+- Real-time conversations with AI tutors
+- Grammar corrections and feedback
+- Pronunciation guidance
+- Cultural context and tips
 
----
+### 🌐 Multi-Language Support
+- **Spanish**: 6 specialized tutors
+- **Amharic** (አማርኛ): Ethiopian language with native voice
+- **Oromo** (Afaan Oromoo): Ethiopian language
+- **Tigrinya** (ትግርኛ): Ethiopian language
+- **Somali** (Soomaali): East African language with native voice
+- Extensible to 100+ languages
 
-## Tech Stack
+### 🎭 Multiple Learning Modes
+- **Text**: Chat-based practice with instant feedback
+- **Audio**: Voice conversations with speech recognition
+- **Video**: Coming soon - immersive video chat
 
-| Layer | Technology |
-|---|---|
-| Backend framework | Django 5.2 + Django REST Framework |
-| Real-time | Django Channels 4 + Daphne (ASGI) |
-| Database | PostgreSQL 16 |
-| Cache / broker | Redis 7 |
-| AI — STT | faster-whisper (local) or OpenAI Whisper |
-| AI — LLM | GPT-4o (OpenAI) or Ollama (local) |
-| AI — TTS | OpenAI TTS |
-| Task queue | Celery |
-| Frontend | Next.js 15.5 (App Router, React 19) |
-| Styling | Tailwind CSS v4 |
-| HTTP client | Axios |
-| State | React hooks + Zustand |
-| Container | Docker + Docker Compose |
+### 👥 Specialized AI Tutors
+Each tutor has a unique personality and teaching style:
+- María - The Friendly Guide (Spanish)
+- Carlos - Job Interview Coach (Spanish)
+- Isabella - Pronunciation Expert (Spanish)
+- Diego - Local Guide (Spanish)
+- Sofía - Debate Partner (Spanish)
+- Alejandro - Storyteller (Spanish)
+- Alemayehu - Ethiopian Cultural Ambassador (Amharic)
+- Chaltu - Oromo Language Guide (Oromo)
+- Mekelle - Tigrinya Teacher (Tigrinya)
+- Faadumo - Somali Conversation Partner (Somali)
 
----
-
-## Quick Start
+## 🚀 Quick Start
 
 ### Prerequisites
+- Python 3.11+
+- Node.js 18+
+- PostgreSQL (or use free hosted DB)
+- Redis (or use free hosted Redis)
 
-- Docker & Docker Compose
-- An [OpenAI API key](https://platform.openai.com/) (or configure local providers)
-
-### 1. Clone and configure
-
+### 1. Clone the Repository
 ```bash
-git clone <repo-url>
+git clone <your-repo-url>
 cd language-learning-platform
-
-# Copy environment files
-cp backend/.env.example backend/.env
-cp frontend/.env.example frontend/.env
-
-# Edit backend/.env and set your OPENAI_API_KEY
 ```
 
-### 2. Start with Docker Compose
-
-```bash
-docker-compose up --build
-```
-
-This starts:
-- PostgreSQL on port 5432
-- Redis on port 6379
-- Django backend on **http://localhost:8000**
-- Next.js frontend on **http://localhost:3000**
-
-### 3. Create a superuser
-
-```bash
-docker-compose exec backend python manage.py createsuperuser
-```
-
-### 4. Seed AI agents (optional)
-
-```bash
-docker-compose exec backend python manage.py shell
-```
-
-```python
-from apps.agents.models import AIAgent
-
-AIAgent.objects.create(
-    name="Sofia",
-    persona="The Encouraging Friend — warm, patient, makes learning feel natural",
-    role="general",
-    accent="Neutral Spanish",
-    supported_languages=["es", "en"],
-    system_prompt_template=(
-        "You are {persona}, a language tutor helping {user_name} practice "
-        "{target_language} at the {proficiency_level} level. "
-        "Be warm and encouraging. Stay in {target_language} as much as possible. "
-        "After each response, provide feedback in a ```json block with corrections and suggestions."
-    ),
-)
-```
-
----
-
-## Local Development (without Docker)
-
-### Backend
-
+### 2. Backend Setup
 ```bash
 cd backend
 
-# Create a virtual environment
+# Create virtual environment
 python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Set up environment
+# Configure environment variables
 cp .env.example .env
-# Edit .env with your settings
+# Edit .env and add your GROQ_API_KEY (free from https://console.groq.com)
 
 # Run migrations
 python manage.py migrate
 
-# Start the ASGI server (with WebSocket support)
-daphne -b 0.0.0.0 -p 8000 config.asgi:application
+# Seed AI tutors
+python manage.py seed_agents
 
-# Or for development without WebSockets:
-python manage.py runserver
+# Start the server (use Daphne for WebSocket support)
+daphne -b 0.0.0.0 -p 8000 config.asgi:application
 ```
 
-### Frontend
-
+### 3. Frontend Setup
 ```bash
 cd frontend
 
 # Install dependencies
 npm install
 
-# Set up environment
+# Configure environment variables
 cp .env.example .env.local
+# Edit .env.local:
+# NEXT_PUBLIC_API_URL=http://localhost:8000
+# NEXT_PUBLIC_WS_URL=ws://localhost:8000
 
 # Start development server
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+### 4. Access the Platform
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8000/api
+- Admin Panel: http://localhost:8000/admin
 
----
+## 🔧 Configuration
 
-## API Reference
+### Free AI Stack Configuration
 
-### Authentication
-
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/api/auth/register/` | Register a new user |
-| POST | `/api/auth/login/` | Login and get JWT tokens |
-| POST | `/api/auth/logout/` | Blacklist refresh token |
-| POST | `/api/auth/token/refresh/` | Refresh access token |
-| GET/PATCH | `/api/auth/profile/` | Get or update profile |
-
-### Agents
-
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/api/agents/` | List all active agents |
-| GET | `/api/agents/<id>/` | Get agent details |
-
-### Sessions
-
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/api/sessions/` | List user's sessions |
-| POST | `/api/sessions/` | Create a new session |
-| GET | `/api/sessions/<id>/` | Get session details |
-| POST | `/api/sessions/<id>/end/` | End a session |
-
-### Conversations
-
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/api/conversations/sessions/<id>/messages/` | List messages for a session |
-
-### WebSocket Endpoints
-
-| Endpoint | Description |
-|---|---|
-| `ws://localhost:8000/ws/conversation/<session_id>/?token=<jwt>` | Text conversation |
-| `ws://localhost:8000/ws/audio/<session_id>/?token=<jwt>` | Audio streaming |
-
----
-
-## WebSocket Protocol
-
-### Text Conversation
-
-**Client → Server:**
-```json
-{ "type": "text_message", "content": "Hola, ¿cómo estás?", "mode": "text" }
-```
-
-**Server → Client (streaming):**
-```json
-{ "type": "stream_start", "message_id": 42 }
-{ "type": "stream_chunk", "chunk": "¡Hola! " }
-{ "type": "stream_chunk", "chunk": "Estoy bien, " }
-{ "type": "message_complete", "content": "¡Hola! Estoy bien, gracias.", "feedback": {...} }
-```
-
-### Audio Streaming
-
-**Client → Server:**
-```json
-{ "type": "start_recording" }
-```
-Then send binary audio chunks (ArrayBuffer).
-```json
-{ "type": "stop_recording" }
-```
-
-**Server → Client:**
-```json
-{ "type": "transcript", "content": "Hola, ¿cómo estás?" }
-{ "type": "ai_response", "content": "¡Hola! Estoy bien..." }
-{ "type": "audio_start" }
-// Binary audio chunks
-{ "type": "audio_end" }
-```
-
----
-
-## AI Provider Configuration
-
-Set these in `backend/.env`:
+The platform uses three AI services, all **completely free**:
 
 ```env
-# STT: 'local' (faster-whisper) or 'openai' (Whisper API)
-STT_PROVIDER=local
-WHISPER_MODEL_SIZE=base  # tiny, base, small, medium, large
+# Groq API (FREE - get from https://console.groq.com/keys)
+GROQ_API_KEY=gsk_YOUR_KEY_HERE
+GROQ_BASE_URL=https://api.groq.com/openai/v1
+GROQ_MODEL=llama-3.3-70b-versatile
+GROQ_WHISPER_MODEL=whisper-large-v3-turbo
 
-# LLM: 'openai' (GPT-4o) or 'local' (Ollama)
-LLM_PROVIDER=openai
-OPENAI_API_KEY=sk-...
-OPENAI_MODEL=gpt-4o
+# AI Providers (ALL FREE)
+STT_PROVIDER=groq      # Speech-to-Text
+LLM_PROVIDER=groq      # Language Model
+TTS_PROVIDER=edge      # Text-to-Speech
 
-# For local LLM via Ollama:
-# LLM_PROVIDER=local
-# LOCAL_LLM_BASE_URL=http://localhost:11434
-# LOCAL_LLM_MODEL=llama3
-
-# TTS: 'openai' or 'local'
-TTS_PROVIDER=openai
+# Edge TTS Voice (optional)
+EDGE_TTS_VOICE=en-US-AriaNeural
 ```
 
----
+**No OpenAI API key required!** 🎉
 
-## Project Structure
+### Available Edge TTS Voices
+
+**English:**
+- `en-US-AriaNeural` (Female, American) - Default
+- `en-US-GuyNeural` (Male, American)
+- `en-GB-SoniaNeural` (Female, British)
+
+**Spanish:**
+- `es-ES-ElviraNeural` (Female, Spain)
+- `es-MX-DaliaNeural` (Female, Mexican)
+- `es-AR-ElenaNeural` (Female, Argentinian)
+
+**Ethiopian Languages:**
+- `am-ET-MekdesNeural` (Female, Amharic)
+- `am-ET-AmehaNeural` (Male, Amharic)
+- `so-SO-UbaxNeural` (Female, Somali)
+- `so-SO-MuuseNeural` (Male, Somali)
+
+**List all voices:** `edge-tts --list-voices`
+
+### 🔒 Security: API Key Management
+
+**⚠️ CRITICAL: Never commit .env files to git!**
+
+The `.gitignore` file is configured to exclude all sensitive files. To get a Groq API key:
+
+1. Go to https://console.groq.com
+2. Sign up (free, no credit card)
+3. Navigate to API Keys
+4. Create new key
+5. Add to `.env` file only (never commit)
+
+If you accidentally expose a key:
+1. Immediately revoke it at https://console.groq.com/keys
+2. Create a new one
+3. Update your `.env`
+4. Restart services
+
+## 📊 Architecture
+
+```
+┌─────────────────────────────────────────────┐
+│         LinguaAI Platform                   │
+├──────────────┬──────────────┬───────────────┤
+│   Frontend   │   Backend    │   AI Services │
+├──────────────┼──────────────┼───────────────┤
+│   Next.js    │   Django     │   Groq LLM    │
+│   React      │   Channels   │   Groq STT    │
+│   TailwindCSS│   DRF        │   Edge TTS    │
+│   TypeScript │   PostgreSQL │   (ALL FREE)  │
+└──────────────┴──────────────┴───────────────┘
+```
+
+### Technology Stack
+
+**Frontend:**
+- Next.js 14 (App Router)
+- React 18
+- TypeScript
+- TailwindCSS
+- Zustand (State Management)
+- WebSockets (Real-time communication)
+
+**Backend:**
+- Django 5.2
+- Django Channels (WebSocket)
+- Django REST Framework
+- PostgreSQL (Database)
+- Redis (Caching & Channels)
+- Daphne (ASGI Server)
+
+**AI Services (All Free):**
+- Groq LLaMA 3.3 (70B) - Chat
+- Groq Whisper Large v3 - Speech-to-Text
+- Microsoft Edge TTS - Text-to-Speech
+
+## 🎯 Use Cases
+
+### 👨‍🎓 Students
+- Practice conversations in target language
+- Get instant grammar corrections
+- Learn pronunciation with native voices
+- Engage with cultural content
+
+### 👩‍🏫 Teachers
+- Assign conversation practice
+- Monitor student progress
+- Customize learning objectives
+- Track session analytics
+
+### 🏢 Language Schools
+- Supplement classroom instruction
+- Provide 24/7 practice opportunities
+- Scale to unlimited students
+- Zero additional tutor costs
+
+### 🌍 NGOs & Non-Profits
+- Provide free language education
+- Deploy without budget constraints
+- Support refugee language learning
+- Enable global access to education
+
+## 📁 Project Structure
 
 ```
 language-learning-platform/
 ├── backend/
 │   ├── apps/
-│   │   ├── accounts/      # User auth & profiles
-│   │   ├── agents/        # AI agent definitions
-│   │   ├── sessions/      # Learning session tracking
-│   │   └── conversations/ # Messages & WebSocket consumers
-│   ├── config/
-│   │   ├── settings/      # Base, development, production configs
-│   │   ├── asgi.py        # ASGI + Channels routing
-│   │   └── middleware.py  # JWT WebSocket authentication
-│   └── services/
-│       ├── ai_provider.py # Abstract base classes
-│       ├── stt_service.py # Speech-to-text (Whisper)
-│       ├── llm_service.py # Language model (GPT-4o / Ollama)
-│       └── tts_service.py # Text-to-speech
-└── frontend/
-    └── src/
-        ├── app/           # Next.js App Router pages
-        ├── components/    # React UI components
-        ├── hooks/         # Custom React hooks
-        ├── lib/           # API client & WebSocket manager
-        └── types/         # TypeScript type definitions
+│   │   ├── accounts/       # User authentication
+│   │   ├── agents/         # AI tutor management
+│   │   ├── conversations/  # Real-time chat
+│   │   └── sessions/       # Learning sessions
+│   ├── config/             # Django settings
+│   ├── services/           # AI service providers
+│   │   ├── llm_service.py  # Groq LLM
+│   │   ├── stt_service.py  # Groq Whisper
+│   │   └── tts_service.py  # Edge TTS
+│   ├── test_free_ai.py     # Test script
+│   └── manage.py
+├── frontend/
+│   ├── src/
+│   │   ├── app/           # Next.js pages
+│   │   ├── components/    # React components
+│   │   ├── lib/          # Utilities
+│   │   └── stores/       # State management
+│   └── package.json
+├── .gitignore             # Git ignore rules
+├── README.md              # This file
+└── DEPLOYMENT.md          # Deployment guide
 ```
 
+## 🚀 Deployment
+
+### Option 1: Railway (Recommended)
+Free tier includes PostgreSQL and Redis. See [DEPLOYMENT.md](DEPLOYMENT.md) for complete guide.
+
+```bash
+# Install Railway CLI
+npm install -g @railway/cli
+
+# Deploy backend
+cd backend
+railway init
+railway up
+
+# Set environment variables
+railway variables set GROQ_API_KEY=your_key_here
+railway variables set STT_PROVIDER=groq
+railway variables set LLM_PROVIDER=groq
+railway variables set TTS_PROVIDER=edge
+railway variables set GROQ_MODEL=llama-3.3-70b-versatile
+railway variables set GROQ_WHISPER_MODEL=whisper-large-v3-turbo
+railway variables set EDGE_TTS_VOICE=en-US-AriaNeural
+```
+
+### Option 2: Render
+Free tier with automatic HTTPS. Configure environment variables in dashboard.
+
+### Option 3: Docker
+For local or VPS deployment. See [DEPLOYMENT.md](DEPLOYMENT.md) for docker-compose configuration.
+
+## 🧪 Testing
+
+### Run Free AI Test Suite
+```bash
+cd backend
+python test_free_ai.py
+```
+
+This will verify:
+- ✅ Environment variables configured correctly
+- ✅ Groq LLM working (requires valid API key)
+- ✅ Edge TTS working (no key needed)
+- ✅ All providers initialized
+
+Expected output when API key is valid:
+```
+✅ LLM: PASSED
+✅ TTS: PASSED  
+✅ STT: PASSED
+```
+
+### Manual Testing
+1. Register a new account
+2. Select a language and proficiency level
+3. Choose a tutor
+4. Start a text conversation
+5. Try voice mode (requires microphone)
+
+### Troubleshooting
+
+**"Invalid API Key"**
+- Get free key from https://console.groq.com/keys
+- Update `GROQ_API_KEY` in `.env`
+- Restart server
+
+**"edge-tts not installed"**
+```bash
+pip install edge-tts==6.1.18
+```
+
+**WebSocket won't connect**
+- Use Daphne, not Django dev server
+- Command: `daphne -b 0.0.0.0 -p 8000 config.asgi:application`
+
+## 📚 Documentation
+
+This README contains all essential information. Additional resources:
+
+- **DEPLOYMENT.md** - Detailed deployment instructions for Railway, Render, Docker, and VPS
+- **backend/test_free_ai.py** - Automated test script for verifying AI configuration
+
+## 🔒 Security Best Practices
+
+### API Key Management
+
+**Never commit these files:**
+- `.env` (already in .gitignore)
+- Any file containing API keys
+- Database credentials
+
+**If you accidentally expose a key:**
+1. Immediately revoke at https://console.groq.com/keys
+2. Create new key
+3. Update `.env` only
+4. Never commit the new key
+5. Restart services
+
+**Best practices:**
+- Use different keys for development and production
+- Rotate keys regularly
+- Monitor usage at Groq dashboard
+- Never share keys in chat, email, or screenshots
+
+## 💰 Cost Analysis
+
+### Monthly Costs for 10,000 Active Users
+
+| Service | Free Stack | OpenAI Stack | Savings |
+|---------|------------|--------------|---------|
+| LLM | $0 | $5,000+ | $5,000+ |
+| STT | $0 | $600+ | $600+ |
+| TTS | $0 | $1,500+ | $1,500+ |
+| Hosting | $0-20 | $0-20 | $0 |
+| **Total** | **$0-20** | **$7,100+** | **$7,080+** |
+
+### Why Free Works
+
+- Groq provides free tier with generous limits
+- Edge TTS is completely free (no limits)
+- No GPU required (API-based inference)
+- Works on free hosting tiers (Railway, Render)
+
+## 🤝 Contributing
+
+Contributions welcome! Please:
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
+
+### Adding New Languages
+
+1. Update `LANGUAGE_CHOICES` in `backend/apps/accounts/models.py`
+2. Add tutor in `backend/apps/agents/management/commands/seed_agents.py`
+3. Update frontend labels in `frontend/src/components/agents/AgentCard.tsx`
+4. Run migrations and seed command
+
+### Adding New AI Providers
+
+1. Implement the base interface in `backend/services/ai_provider.py`
+2. Add provider class in respective service file
+3. Update factory function
+4. Test with `test_free_ai.py`
+
+## 🎯 Roadmap
+
+- [ ] Video chat with AI avatars
+- [ ] Pronunciation scoring
+- [ ] Gamification (points, achievements)
+- [ ] Mobile apps (React Native)
+- [ ] Offline mode with local models
+- [ ] Group learning sessions
+- [ ] Custom vocabulary lists
+- [ ] Progress analytics dashboard
+
 ---
 
-## Security Notes
+**🌟 Star this repo if you find it useful!**
 
-- All WebSocket connections require a valid JWT token passed as `?token=<access_token>`
-- System prompts include guardrails to prevent prompt injection
-- Production settings enforce HTTPS, HSTS, and secure cookies
-- Token blacklisting prevents token reuse after logout
-
----
-
-## License
-
-MIT
+**🎓 Built with ❤️ for free education worldwide.**

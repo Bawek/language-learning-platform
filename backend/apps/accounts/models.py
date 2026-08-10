@@ -20,6 +20,10 @@ class User(AbstractUser):
         ('italian', 'Italian'),
         ('korean', 'Korean'),
         ('arabic', 'Arabic'),
+        ('amharic', 'Amharic (አማርኛ)'),
+        ('oromo', 'Oromo (Afaan Oromoo)'),
+        ('tigrinya', 'Tigrinya (ትግርኛ)'),
+        ('somali', 'Somali (Soomaali)'),
     ]
 
     PROFICIENCY_CHOICES = [

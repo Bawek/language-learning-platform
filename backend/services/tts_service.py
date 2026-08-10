@@ -112,6 +112,76 @@ class LocalTTSProvider(BaseTTSProvider):
         yield _generate_silence_wav(duration_ms=500)
 
 
+class EdgeTTSProvider(BaseTTSProvider):
+    """
+    Text-to-Speech using Microsoft Edge's free TTS API via edge-tts library.
+    Completely free with no API key required. Supports 400+ voices in 100+ languages.
+    
+    Popular voices:
+    - English: en-US-AriaNeural, en-US-GuyNeural, en-GB-SoniaNeural
+    - Spanish: es-ES-ElviraNeural, es-MX-DaliaNeural, es-AR-ElenaNeural
+    - Amharic: am-ET-AmehaNeural, am-ET-MekdesNeural
+    - Somali: so-SO-MuuseNeural, so-SO-UbaxNeural
+    """
+
+    # Voice mapping for common languages (can be overridden via EDGE_TTS_VOICE env var)
+    DEFAULT_VOICES = {
+        'en': 'en-US-AriaNeural',
+        'es': 'es-ES-ElviraNeural',
+        'am': 'am-ET-MekdesNeural',
+        'om': 'en-US-AriaNeural',  # Oromo not supported, fallback to English
+        'ti': 'en-US-AriaNeural',  # Tigrinya not supported, fallback to English
+        'so': 'so-SO-UbaxNeural',
+        'fr': 'fr-FR-DeniseNeural',
+        'de': 'de-DE-KatjaNeural',
+        'ar': 'ar-SA-ZariyahNeural',
+        'zh': 'zh-CN-XiaoxiaoNeural',
+    }
+
+    def __init__(self, default_voice: Optional[str] = None):
+        self.default_voice = default_voice or os.environ.get('EDGE_TTS_VOICE', 'en-US-AriaNeural')
+
+    async def synthesize_stream(
+        self,
+        text: str,
+        voice: str = 'alloy',
+        language: str = 'en',
+    ) -> AsyncGenerator[bytes, None]:
+        """
+        Stream TTS audio using edge-tts.
+        
+        Args:
+            text: Text to synthesize
+            voice: Voice name (edge-tts format) or 'alloy'/'echo'/etc (will map to appropriate voice)
+            language: Language code to auto-select voice if voice is generic
+        """
+        try:
+            import edge_tts
+        except ImportError:
+            logger.error('edge-tts not installed. Install with: pip install edge-tts')
+            yield _generate_silence_wav(duration_ms=500)
+            return
+
+        # Map OpenAI-style voice names to edge-tts voices
+        if voice in ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer']:
+            # Use language-specific default voice
+            voice = self.DEFAULT_VOICES.get(language, self.default_voice)
+        
+        try:
+            communicate = edge_tts.Communicate(text, voice)
+            
+            async for chunk in communicate.stream():
+                if chunk["type"] == "audio":
+                    yield chunk["data"]
+                    
+            logger.debug('TTS (Edge): voice=%s, text_length=%d', voice, len(text))
+            
+        except Exception as exc:
+            logger.error('Edge TTS error: %s', exc, exc_info=True)
+            # Fallback to silence on error
+            yield _generate_silence_wav(duration_ms=500)
+
+
 def _generate_silence_wav(duration_ms: int = 500, sample_rate: int = 22050) -> bytes:
     """Generate a minimal silent WAV file for fallback/testing."""
     import struct
@@ -132,13 +202,18 @@ def _generate_silence_wav(duration_ms: int = 500, sample_rate: int = 22050) -> b
 def get_tts_provider() -> BaseTTSProvider:
     """
     Factory function that returns the configured TTS provider.
-    Reads TTS_PROVIDER env var: 'openai' (default) | 'local'
+    Reads TTS_PROVIDER env var: 'edge' (default, free) | 'openai' | 'local'
     """
-    provider = os.environ.get('TTS_PROVIDER', 'openai').lower()
-    if provider == 'local':
-        logger.info('Using local TTS provider.')
-        return LocalTTSProvider()
-    else:
+    provider = os.environ.get('TTS_PROVIDER', 'edge').lower()
+    
+    if provider == 'edge':
+        voice = os.environ.get('EDGE_TTS_VOICE', 'en-US-AriaNeural')
+        logger.info('Using Edge TTS provider (voice=%s) - FREE.', voice)
+        return EdgeTTSProvider(default_voice=voice)
+    elif provider == 'openai':
         model = os.environ.get('OPENAI_TTS_MODEL', 'tts-1')
         logger.info('Using OpenAI TTS provider (model=%s).', model)
         return OpenAITTSProvider(model=model)
+    else:  # local
+        logger.info('Using local TTS provider.')
+        return LocalTTSProvider()

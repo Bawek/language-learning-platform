@@ -124,16 +124,64 @@ class OpenAIWhisperSTT(BaseSTTProvider):
             raise
 
 
+class GroqWhisperSTT(BaseSTTProvider):
+    """
+    Speech-to-Text using Groq's Whisper API (OpenAI-compatible).
+    Free tier available with generous limits.
+    Supports whisper-large-v3 and whisper-large-v3-turbo models.
+    """
+
+    def __init__(self, api_key: Optional[str] = None, model: str = 'whisper-large-v3-turbo'):
+        self.api_key = api_key or os.environ.get('GROQ_API_KEY', '')
+        if not self.api_key:
+            raise ValueError('GROQ_API_KEY is required for GroqWhisperSTT.')
+        self.model = model
+        self.base_url = os.environ.get('GROQ_BASE_URL', 'https://api.groq.com/openai/v1')
+
+    async def transcribe(self, audio_bytes: bytes, language: str) -> str:
+        """Transcribe audio using Groq's Whisper API."""
+        from openai import AsyncOpenAI
+
+        lang_code = normalize_language_code(language)
+        client = AsyncOpenAI(
+            api_key=self.api_key,
+            base_url=self.base_url,
+        )
+
+        # Groq Whisper API is OpenAI-compatible
+        audio_file = io.BytesIO(audio_bytes)
+        audio_file.name = 'audio.webm'
+
+        try:
+            response = await client.audio.transcriptions.create(
+                model=self.model,
+                file=audio_file,
+                language=lang_code,
+                response_format='text',
+            )
+            transcript = str(response).strip()
+            logger.debug('STT (Groq): model=%s, transcript=%r', self.model, transcript[:80])
+            return transcript
+        except Exception as exc:
+            logger.error('Groq Whisper API error: %s', exc, exc_info=True)
+            raise
+
+
 def get_stt_provider() -> BaseSTTProvider:
     """
     Factory function that returns the configured STT provider.
-    Reads STT_PROVIDER env var: 'local' (default) | 'openai'
+    Reads STT_PROVIDER env var: 'groq' (default) | 'openai' | 'local'
     """
-    provider = os.environ.get('STT_PROVIDER', 'local').lower()
-    if provider == 'openai':
+    provider = os.environ.get('STT_PROVIDER', 'groq').lower()
+    
+    if provider == 'groq':
+        model = os.environ.get('GROQ_WHISPER_MODEL', 'whisper-large-v3-turbo')
+        logger.info('Using Groq Whisper STT provider (model=%s).', model)
+        return GroqWhisperSTT(model=model)
+    elif provider == 'openai':
         logger.info('Using OpenAI Whisper STT provider.')
         return OpenAIWhisperSTT()
-    else:
+    else:  # local
         model_size = os.environ.get('WHISPER_MODEL_SIZE', 'base')
         logger.info('Using local faster-whisper STT provider (model=%s).', model_size)
         return FasterWhisperSTT(model_size=model_size)

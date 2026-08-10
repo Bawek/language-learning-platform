@@ -219,8 +219,9 @@ class ConversationConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def increment_message_count(self):
         from apps.sessions.models import LearningSession
+        from django.db.models import F
         LearningSession.objects.filter(id=self.session_id).update(
-            total_messages=LearningSession.total_messages + 1,  # type: ignore[operator]
+            total_messages=F('total_messages') + 1
         )
 
     @database_sync_to_async
@@ -388,7 +389,12 @@ class AudioConsumer(AsyncWebsocketConsumer):
             tts = get_tts_provider()
 
             await self.send(text_data=json.dumps({'type': 'audio_start'}))
-            async for audio_chunk in tts.synthesize_stream(full_response, voice='alloy'):
+            # Pass language to TTS for voice selection if using Edge TTS
+            async for audio_chunk in tts.synthesize_stream(
+                full_response, 
+                voice='alloy',
+                language=self.session.target_language
+            ):
                 await self.send(bytes_data=audio_chunk)
 
             await self.send(text_data=json.dumps({'type': 'audio_end'}))
@@ -449,6 +455,7 @@ class AudioConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def increment_message_count(self):
         from apps.sessions.models import LearningSession
+        from django.db.models import F
         LearningSession.objects.filter(id=self.session_id).update(
-            total_messages=LearningSession.total_messages + 1,  # type: ignore[operator]
+            total_messages=F('total_messages') + 1
         )

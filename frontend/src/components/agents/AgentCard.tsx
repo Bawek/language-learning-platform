@@ -30,7 +30,8 @@ const AVATAR_COLORS: Record<string, string> = {
 const LANGUAGE_LABELS: Record<string, string> = {
   en: 'English', es: 'Spanish', fr: 'French', de: 'German',
   ja: 'Japanese', zh: 'Mandarin', pt: 'Portuguese', it: 'Italian',
-  ko: 'Korean', ar: 'Arabic',
+  ko: 'Korean', ar: 'Arabic', am: 'Amharic', om: 'Oromo',
+  ti: 'Tigrinya', so: 'Somali',
 }
 
 export function AgentCard({ agent, mode }: AgentCardProps) {

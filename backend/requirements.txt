@@ -10,6 +10,7 @@ redis==5.2.1
 celery==5.4.0
 openai==1.82.0
 faster-whisper==1.1.1
+edge-tts==6.1.18
 python-dotenv==1.1.0
 Pillow==11.2.1
 uvicorn[standard]==0.34.3

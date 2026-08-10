@@ -147,14 +147,23 @@ SIMPLE_JWT = {
 # Channel Layers - Redis backend
 REDIS_URL = env('REDIS_URL', default='redis://localhost:6379/0')
 
+# Use in-memory channel layer for development (single-server only)
+# For production, use Redis backend
 CHANNEL_LAYERS = {
     'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            'hosts': [REDIS_URL],
-        },
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
     },
 }
+
+# Uncomment below for Redis in production:
+# CHANNEL_LAYERS = {
+#     'default': {
+#         'BACKEND': 'channels_redis.core.RedisChannelLayer',
+#         'CONFIG': {
+#             'hosts': [REDIS_URL],
+#         },
+#     },
+# }
 
 # CORS Settings
 CORS_ALLOW_CREDENTIALS = True
