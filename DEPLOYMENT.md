@@ -109,8 +109,9 @@ Railway provides free hosting with PostgreSQL, Redis, and WebSocket support.
 2. **Create New Web Service**
    - Connect your GitHub repo
    - Select `backend` as root directory
+   - Railway will auto-detect Django and use the Procfile
    - Build Command: `pip install -r requirements.txt`
-   - Start Command: `daphne -b 0.0.0.0 -p $PORT config.asgi:application`
+   - Start Command: Automatically uses `Procfile`
 
 3. **Add PostgreSQL Database**
    - Create PostgreSQL database in Render
@@ -427,19 +428,57 @@ NEXT_PUBLIC_WS_URL=wss://api.your-domain.com
 
 ## Post-Deployment Checklist
 
+### Essential Checks
 - [ ] Backend is running and accessible
+- [ ] Check logs: No PORT errors
 - [ ] Frontend is running and accessible
-- [ ] WebSocket connections work
-- [ ] Database migrations completed
-- [ ] Agents seeded successfully
-- [ ] CORS configured correctly
-- [ ] SSL certificates installed
-- [ ] Environment variables set
-- [ ] Static files served correctly
-- [ ] Test user registration
-- [ ] Test AI conversation
-- [ ] Test audio mode (if using)
-- [ ] Monitor logs for errors
+- [ ] WebSocket connections work (check browser console)
+- [ ] Database migrations completed successfully
+- [ ] Agents seeded successfully (check /admin)
+- [ ] CORS configured correctly (no CORS errors)
+- [ ] SSL certificates installed (HTTPS working)
+- [ ] Environment variables set correctly
+
+### Functional Tests
+- [ ] User registration works
+- [ ] Login/logout works
+- [ ] Can create a learning session
+- [ ] Text conversations work
+- [ ] AI responds with proper feedback
+- [ ] Grammar corrections appear
+- [ ] Voice mode works (if using audio)
+- [ ] Different tutors have different styles
+- [ ] Ethiopian language tutors accessible
+- [ ] Spanish language tutors accessible
+
+### Performance Checks
+- [ ] Backend responds within 2 seconds
+- [ ] WebSocket connects within 3 seconds
+- [ ] AI responses stream smoothly
+- [ ] No memory leaks (check Railway metrics)
+- [ ] Database queries optimized
+
+### Security Checks
+- [ ] GROQ_API_KEY is set (not exposed in logs)
+- [ ] SECRET_KEY is unique and secure
+- [ ] DEBUG=False in production
+- [ ] ALLOWED_HOSTS configured correctly
+- [ ] No sensitive data in error messages
+
+### Railway Specific
+- [ ] PORT environment variable detected
+- [ ] Build completes successfully
+- [ ] start.sh has execute permissions
+- [ ] Procfile or nixpacks.toml working
+- [ ] PostgreSQL connected
+- [ ] Redis connected (if using)
+
+### Monitoring
+- [ ] Check Railway logs for errors
+- [ ] Monitor Groq API usage
+- [ ] Check response times
+- [ ] Monitor memory usage
+- [ ] Set up uptime monitoring (optional)
 
 ---
 
@@ -505,6 +544,29 @@ sudo systemctl restart language-frontend
 - Verify CORS settings include WebSocket origins
 - Check firewall/security group rules
 - Ensure SSL is configured for WSS connections
+
+### "$PORT" Error on Railway/Render
+**Problem:** `daphne: error: argument -p/--port: invalid int value: '$PORT'`
+
+**Solution:**
+The Procfile now uses `start.sh` which properly handles the PORT variable.
+
+If you still see this error:
+1. Ensure `start.sh` has execute permissions
+2. Or manually set start command to: `bash start.sh`
+3. Verify PORT environment variable is set by the platform
+
+**Alternative:** Use Railway's nixpacks.toml instead:
+```toml
+[phases.setup]
+nixPkgs = ["python311"]
+
+[phases.install]
+cmds = ["pip install -r requirements.txt"]
+
+[start]
+cmd = "daphne -b 0.0.0.0 -p ${PORT:-8000} config.asgi:application"
+```
 
 ### Database Connection Issues
 - Verify DATABASE_URL format

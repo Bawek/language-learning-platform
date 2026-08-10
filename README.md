@@ -332,6 +332,11 @@ pip install edge-tts==6.1.18
 - Use Daphne, not Django dev server
 - Command: `daphne -b 0.0.0.0 -p 8000 config.asgi:application`
 
+**Railway deployment fails with "$PORT" error**
+- The platform uses `start.sh` which handles PORT correctly
+- Alternative: Railway will use `nixpacks.toml` if `Procfile` fails
+- Check Railway logs to see which configuration it's using
+
 ## 📚 Documentation
 
 This README contains all essential information. Additional resources:
@@ -414,6 +419,77 @@ Contributions welcome! Please:
 - [ ] Group learning sessions
 - [ ] Custom vocabulary lists
 - [ ] Progress analytics dashboard
+
+---
+
+## 📋 Quick Reference
+
+### Common Commands
+
+**Backend:**
+```bash
+# Activate virtual environment
+.venv\Scripts\activate  # Windows
+source .venv/bin/activate  # Linux/Mac
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run migrations
+python manage.py migrate
+
+# Create superuser
+python manage.py createsuperuser
+
+# Seed AI tutors
+python manage.py seed_agents
+
+# Start server (WebSocket support)
+daphne -b 0.0.0.0 -p 8000 config.asgi:application
+
+# Run tests
+python test_free_ai.py
+```
+
+**Frontend:**
+```bash
+# Install dependencies
+npm install
+
+# Development server
+npm run dev
+
+# Production build
+npm run build
+npm start
+```
+
+### Environment Variables
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `GROQ_API_KEY` | ✅ Yes | - | Get from console.groq.com |
+| `STT_PROVIDER` | No | groq | Speech-to-text provider |
+| `LLM_PROVIDER` | No | groq | Language model provider |
+| `TTS_PROVIDER` | No | edge | Text-to-speech provider |
+| `GROQ_MODEL` | No | llama-3.3-70b-versatile | LLM model |
+| `GROQ_WHISPER_MODEL` | No | whisper-large-v3-turbo | STT model |
+| `EDGE_TTS_VOICE` | No | en-US-AriaNeural | TTS voice |
+
+### URLs
+
+- **Local Frontend:** http://localhost:3000
+- **Local Backend:** http://localhost:8000
+- **API:** http://localhost:8000/api
+- **Admin:** http://localhost:8000/admin
+- **WebSocket:** ws://localhost:8000/ws
+
+### Useful Links
+
+- **Groq Console:** https://console.groq.com
+- **Edge TTS Voices:** Run `edge-tts --list-voices`
+- **Railway Dashboard:** https://railway.app
+- **Render Dashboard:** https://render.com
 
 ---
 

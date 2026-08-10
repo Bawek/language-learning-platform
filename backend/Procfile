@@ -1,2 +1,2 @@
-web: daphne -b 0.0.0.0 -p $PORT config.asgi:application
+web: bash start.sh
 release: python manage.py migrate --no-input && python manage.py seed_agents
