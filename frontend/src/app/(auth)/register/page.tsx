@@ -17,6 +17,10 @@ const LANGUAGE_OPTIONS = [
   { value: 'italian', label: 'Italian' },
   { value: 'korean', label: 'Korean' },
   { value: 'arabic', label: 'Arabic' },
+  { value: 'amharic', label: 'Amharic (አማርኛ)' },
+  { value: 'oromo', label: 'Oromo (Afaan Oromoo)' },
+  { value: 'tigrinya', label: 'Tigrinya (ትግርኛ)' },
+  { value: 'somali', label: 'Somali (Soomaali)' },
 ]
 
 const PROFICIENCY_OPTIONS = [
